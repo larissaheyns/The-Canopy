@@ -17,10 +17,7 @@
             <div class="write-card">
                 <div class="write-card-header">
                     <p class="write-card-title">Write a Dream</p>
-                    <div class="write-card-icons">
-                        <i class="fa-solid fa-sliders"></i>
-                        <i class="fa-solid fa-bookmark"></i>
-                    </div>
+                   
                 </div>
 
                 <form>
@@ -33,6 +30,15 @@
                         <label class="field-label">YOUR DREAM</label>
                         <textarea class="dream-textarea" placeholder="An old friend visited me, but they had no face. I knew them, but not who they were."></textarea>
                     </div>
+
+                    <div class="field-group">
+    <label class="field-label">DREAM TYPE</label>
+    <select class="dream-input" name="dream_type" id="dreamType">
+        <option value="Nightmare">Nightmare</option>
+        <option value="Lucid">Lucid</option>
+        <option value="Balanced">Liminal</option>
+    </select>
+</div>
 
                     <div class="field-group">
                         <label class="field-label">TAGS / RESONANCES</label>

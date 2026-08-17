@@ -29,7 +29,7 @@
             </div>
 
             <div class="dream-grid">
-                <div class="dream-card-dark">
+                <a href="dream.php?id=1" class="dream-card-dark" style="text-decoration:none; color:inherit; display:block;">
                     <div class="d-flex align-items-start justify-content-between">
                         <div class="d-flex align-items-center gap-2">
                             <img class="avatar-orb" src="img/avatar-drifter-493.jpg" alt="Drifter-493">
@@ -43,9 +43,9 @@
                     <p class="card-body-text">I was falling, endlessly. The wind screamed but I couldn't wake up.</p>
                     <span class="dream-tag">#Falling</span>
                     <span class="dream-tag">#Anxiety</span>
-                </div>
+                </a>
 
-                <div class="dream-card-dark">
+                <a href="dream.php?id=1" class="dream-card-dark" style="text-decoration:none; color:inherit; display:block;">
                     <div class="d-flex align-items-start justify-content-between">
                         <div class="d-flex align-items-center gap-2">
                             <img class="avatar-orb" src="img/avatar-drifter-21.jpg" alt="Drifter-21">
@@ -59,9 +59,9 @@
                     <p class="card-body-text">I found an old house familiar, but it wasn't mine.</p>
                     <span class="dream-tag">#Nostalgia</span>
                     <span class="dream-tag">#Memory</span>
-                </div>
+</a>
 
-                <div class="dream-card-dark">
+                <a href="dream.php?id=1" class="dream-card-dark" style="text-decoration:none; color:inherit; display:block;">
                     <div class="d-flex align-items-start justify-content-between">
                         <div class="d-flex align-items-center gap-2">
                             <img class="avatar-orb" src="img/avatar-drifter-8.jpg" alt="Drifter-8">
@@ -75,7 +75,7 @@
                     <p class="card-body-text">The sky split open and poured light instead of rain. No one else seemed to notice.</p>
                     <span class="dream-tag">#Anomaly</span>
                     <span class="dream-tag">#Sky</span>
-                </div>
+</a>
             </div>
         </div>
     </div>

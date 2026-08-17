@@ -43,7 +43,6 @@
                 <p class="technique-label">Lucid Technique</p>
                 <p class="technique-title">Reality Check</p>
                 <p class="technique-text">Try counting your fingers twice. If the number changes, you're dreaming.</p>
-                <button type="button" class="btn btn-learn-more">Learn More</button>
             </div>
 
             <div class="dream-card">
