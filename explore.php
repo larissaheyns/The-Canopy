@@ -1,3 +1,34 @@
+<?php
+include 'config.php';
+
+$result = $conn->query(
+    "SELECT e.emanations_id, e.title, e.content, e.dream_type, e.created_at,
+            m.alias
+     FROM emanations e
+     JOIN minds m ON e.mind_id = m.mind_id
+     WHERE e.is_visible = 1
+     ORDER BY e.created_at DESC"
+);
+
+$dreams = [];
+if ($result) {
+    $dreams = $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function time_ago($datetime) {
+    $diff = time() - strtotime($datetime);
+ 
+    if ($diff < 60) {
+        return 'just now';
+    } elseif ($diff < 3600) {
+        return floor($diff / 60) . 'm ago';
+    } elseif ($diff < 86400) {
+        return floor($diff / 3600) . 'h ago';
+    } else {
+        return floor($diff / 86400) . 'd ago';
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
@@ -24,58 +55,32 @@
                 <span class="filter-pill active">All</span>
                 <span class="filter-pill">Nightmare</span>
                 <span class="filter-pill">Lucid</span>
-                <span class="filter-pill">Dream</span>
-                <span class="filter-pill">Anomaly</span>
+                <span class="filter-pill">Liminal</span>
             </div>
 
             <div class="dream-grid">
-                <a href="dream.php?id=1" class="dream-card-dark" style="text-decoration:none; color:inherit; display:block;">
-                    <div class="d-flex align-items-start justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <img class="avatar-orb" src="img/avatar-drifter-493.jpg" alt="Drifter-493">
-                            <p class="card-username">Drifter-493</p>
-                        </div>
-                        <div class="text-end">
-                            <div class="card-timestamp mb-1">2h ago</div>
-                            <span class="resonate-btn"><i class="fa-regular fa-heart"></i> Resonate</span>
-                        </div>
-                    </div>
-                    <p class="card-body-text">I was falling, endlessly. The wind screamed but I couldn't wake up.</p>
-                    <span class="dream-tag">#Falling</span>
-                    <span class="dream-tag">#Anxiety</span>
-                </a>
+                <?php if (empty($dreams)): ?>
+                    <p class="card-timestamp">No dreams have been shared yet. Be the first to write one.</p>
+                <?php endif; ?>
 
-                <a href="dream.php?id=1" class="dream-card-dark" style="text-decoration:none; color:inherit; display:block;">
-                    <div class="d-flex align-items-start justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <img class="avatar-orb" src="img/avatar-drifter-21.jpg" alt="Drifter-21">
-                            <p class="card-username">Drifter-21</p>
-                        </div>
-                        <div class="text-end">
-                            <div class="card-timestamp mb-1">3h ago</div>
-                            <span class="resonate-btn"><i class="fa-regular fa-heart"></i> Resonate</span>
-                        </div>
-                    </div>
-                    <p class="card-body-text">I found an old house familiar, but it wasn't mine.</p>
-                    <span class="dream-tag">#Nostalgia</span>
-                    <span class="dream-tag">#Memory</span>
-</a>
-
-                <a href="dream.php?id=1" class="dream-card-dark" style="text-decoration:none; color:inherit; display:block;">
-                    <div class="d-flex align-items-start justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <img class="avatar-orb" src="img/avatar-drifter-8.jpg" alt="Drifter-8">
-                            <p class="card-username">Drifter-8</p>
-                        </div>
-                        <div class="text-end">
-                            <div class="card-timestamp mb-1">5h ago</div>
-                            <span class="resonate-btn"><i class="fa-regular fa-heart"></i> Resonate</span>
-                        </div>
-                    </div>
-                    <p class="card-body-text">The sky split open and poured light instead of rain. No one else seemed to notice.</p>
-                    <span class="dream-tag">#Anomaly</span>
-                    <span class="dream-tag">#Sky</span>
-</a>
+                <?php foreach ($dreams as $dream): ?>
+    <a href="dream.php?id=<?php echo (int) $dream['emanations_id']; ?>"
+       class="dream-card-dark" style="text-decoration:none; color:inherit; display:block;">
+        <div class="d-flex align-items-start justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <img class="avatar-orb" src="img/avatar-default.jpg" alt="<?php echo htmlspecialchars($dream['alias']); ?>">
+                <p class="card-username"><?php echo htmlspecialchars($dream['alias']); ?></p>
+            </div>
+            <div class="text-end">
+                <div class="card-timestamp mb-1"><?php echo time_ago($dream['created_at']); ?></div>
+                <span class="resonate-btn"><i class="fa-regular fa-heart"></i> Resonate</span>
+            </div>
+        </div>
+        <p class="card-body-text"><?php echo htmlspecialchars($dream['content']); ?></p>
+        <span class="dream-tag">#<?php echo htmlspecialchars($dream['dream_type']); ?></span>
+    </a>
+<?php endforeach; ?>
+                        
             </div>
         </div>
     </div>

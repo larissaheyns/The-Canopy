@@ -1,3 +1,43 @@
+<?php
+include 'config.php';
+ 
+$isLoggedIn = isset($_SESSION['mind_id']);
+ 
+if ($isLoggedIn) {
+    $stmt = $conn->prepare("SELECT alias FROM minds WHERE mind_id = ?");
+    $stmt->bind_param('i', $_SESSION['mind_id']);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $displayAlias = $row['alias'] ?? 'Drifter';
+} else {
+    $displayAlias = $_SESSION['guest_alias'] ?? 'Anonymous Drifter';
+}
+ 
+$nightmareBackgrounds = ['img/nightmare-background.png', 'img/nightmare-background2.png'];
+if (!isset($_SESSION['nightmare_bg'])) {
+    $_SESSION['nightmare_bg'] = $nightmareBackgrounds[array_rand($nightmareBackgrounds)];
+}
+$bgImage = $_SESSION['nightmare_bg'];
+
+$result = $conn->query(
+    "SELECT e.emanations_id, e.content, e.created_at, m.alias
+     FROM emanations e
+     JOIN minds m ON e.mind_id = m.mind_id
+     WHERE e.is_visible = 1 AND e.dream_type = 'Nightmare'
+     ORDER BY e.created_at DESC
+     LIMIT 12"
+);
+$dreams = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+ 
+function time_ago($datetime) {
+    $diff = time() - strtotime($datetime);
+    if ($diff < 60) return 'just now';
+    if ($diff < 3600) return floor($diff / 60) . 'm ago';
+    if ($diff < 86400) return floor($diff / 3600) . 'h ago';
+    return floor($diff / 86400) . 'd ago';
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
@@ -5,7 +45,7 @@
     <title>The Canopy</title>
     <link href="theme.css" rel="stylesheet">
 </head>
-<body class="theme-nightmare">
+<body class="theme-nightmare" style="background-image: url('<?php echo htmlspecialchars($bgImage); ?>');">
 
     <?php include 'navbar.php'; ?>
 
@@ -14,9 +54,9 @@
 
         <div class="page-header d-flex align-items-start justify-content-between">
             <div class="d-flex align-items-center gap-3">
-                <img class="avatar-circle" src="img/avatar-somnambulist.jpg" alt="Somnambulist">
+                <img class="avatar-circle" src="img/avatar-default.jpg" alt="<?php echo htmlspecialchars($displayAlias); ?>">
                 <div>
-                    <p class="profile-name-nightmare">Somnambulist</p>
+                    <p class="profile-name-nightmare"><?php echo htmlspecialchars($displayAlias); ?></p>
                     <p class="profile-status-nightmare mb-0">Nightmare State</p>
                 </div>
             </div>
@@ -25,47 +65,25 @@
 
         <h2 class="tagline-nightmare">You are not alone in the dark</h2>
 
-        <div class="d-flex card-row">
-            <div class="dream-card-dark">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2">
-                        <img class="avatar-circle small" src="img/avatar-drifter-42.jpg" alt="Drifter-42">
-                        <p class="card-username">Drifter-12</p>
+         <div class="d-flex card-row">
+            <?php if (empty($dreams)): ?>
+                <p class="card-timestamp">No nightmares have been shared yet.</p>
+            <?php endif; ?>
+ 
+            <?php foreach ($dreams as $dream): ?>
+                <a href="dream.php?id=<?php echo (int) $dream['emanations_id']; ?>"
+                   class="dream-card-dark" style="text-decoration:none; color:inherit; display:block;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <img class="avatar-circle small" src="img/avatar-default.jpg" alt="<?php echo htmlspecialchars($dream['alias']); ?>">
+                            <p class="card-username"><?php echo htmlspecialchars($dream['alias']); ?></p>
+                        </div>
+                        <span class="card-timestamp"><?php echo time_ago($dream['created_at']); ?></span>
                     </div>
-                    <span class="card-timestamp">1h ago</span>
-                </div>
-                <p class="card-body-text">Sleep paralysis again.<br> 
-                                        A shadow watched me from the corner.</p>
-                <span class="dream-tag">#Sleep Paralysis</span>
-                <span class="dream-tag">#Fear</span>
-            </div>
-
-            <div class="dream-card-dark">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2">
-                        <img class="avatar-circle small" src="img/avatar-drifter-42.jpg" alt="Drifter-42">
-                        <p class="card-username">Drifter-88</p>
-                    </div>
-                    <span class="card-timestamp">3h ago</span>
-                </div>
-                <p class="card-body-text">I was being chased<br> 
-                                        through endless hallways</p>
-                <span class="dream-tag">#Chase</span>
-                <span class="dream-tag">#Anxiety</span>
-            </div>         
-
-            <div class="dream-card-dark">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2">
-                        <img class="avatar-circle small" src="img/avatar-drifter-91.jpg" alt="Drifter-91">
-                        <p class="card-username">Drifter-5</p>
-                    </div>
-                    <span class="card-timestamp">5h ago</span>
-                </div>
-                <p class="card-body-text">My teeth crumbled in my hands</p>
-                <span class="dream-tag">#Teeth Falling</span>
-                <span class="dream-tag">#Shame</span>
-            </div>
+                    <p class="card-body-text"><?php echo nl2br(htmlspecialchars($dream['content'])); ?></p>
+                    <span class="dream-tag">#Nightmare</span>
+                </a>
+            <?php endforeach; ?>
         </div>
     </div>
 

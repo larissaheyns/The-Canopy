@@ -7,7 +7,6 @@ body {
    ===================================================================== */
 
 body.theme-light {
-    background-image: url('img/lucid-background.png'); 
     background-repeat: no-repeat; 
     background-position: center 35%; 
     background-size: cover; 
@@ -23,7 +22,6 @@ body.theme-dark {
 }
 
 body.theme-nightmare {
-    background-image: url('img/nightmare-background.png'); 
     background-repeat: no-repeat; 
     background-position: center 35%; 
     background-size: cover; 
@@ -32,8 +30,7 @@ body.theme-nightmare {
     width: 100%; 
 }
 
-body.theme-liminal{
-     background-image: url('img/liminal-background.png'); 
+body.theme-liminal {
     background-repeat: no-repeat; 
     background-position: center 35%; 
     background-size: cover; 
