@@ -1,19 +1,50 @@
 <?php
 include 'config.php';
 
-$result = $conn->query(
-    "SELECT e.emanations_id, e.title, e.content, e.dream_type, e.created_at,
-            m.alias
-     FROM emanations e
-     JOIN minds m ON e.mind_id = m.mind_id
-     WHERE e.is_visible = 1
-     ORDER BY e.created_at DESC"
-);
-
-$dreams = [];
-if ($result) {
-    $dreams = $result->fetch_all(MYSQLI_ASSOC);
+$allowedTypes = ['Nightmare', 'Lucid', 'Liminal'];
+$activeType = $_GET['type'] ?? 'All';
+if (!in_array($activeType, $allowedTypes, true)) {
+    $activeType = 'All';
 }
+
+$searchTerm = trim($_GET['q'] ?? '');
+
+$sql = "SELECT e.emanations_id, e.title, e.content, e.dream_type, e.created_at,
+               m.alias,
+               (SELECT COUNT(*) FROM resonances r WHERE r.emanations_id = e.emanations_id) AS resonance_count
+        FROM emanations e
+        JOIN minds m ON e.mind_id = m.mind_id
+        WHERE e.is_visible = 1";
+
+$params = [];
+$types = '';
+
+if ($activeType !== 'All') {
+    $sql .= " AND e.dream_type = ?";
+    $params[] = $activeType;
+    $types .= 's';
+}
+
+if ($searchTerm !== '') {
+    $sql .= " AND (e.content LIKE ? OR e.title LIKE ? OR m.alias LIKE ?)";
+    $like = '%' . $searchTerm . '%';
+    $params[] = $like;
+    $params[] = $like;
+    $params[] = $like;
+    $types .= 'sss';
+}
+
+$sql .= " ORDER BY e.created_at DESC";
+
+$stmt = $conn->prepare($sql);
+if ($types !== '') {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+
+$dreams = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+$stmt->close();
 
 function time_ago($datetime) {
     $diff = time() - strtotime($datetime);
@@ -45,22 +76,39 @@ function time_ago($datetime) {
 
             <p class="page-eyebrow">Global Dreams</p>
 
-            <div class="search-bar">
-                <i class="fa-solid fa-magnifying-glass leading"></i>
-                <input type="text" placeholder="Search dreams or tags...">
-                <div class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></div>
-            </div>
+            <form method="get" action="explore.php">
+                <input type="hidden" name="type" value="<?php echo htmlspecialchars($activeType); ?>">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass leading"></i>
+                    <input type="text" name="q" placeholder="Search dreams or tags..." value="<?php echo htmlspecialchars($searchTerm); ?>">
+                    <button type="submit" class="search-btn" style="border:none;cursor:pointer;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+            </form>
 
+            <?php
+            $filterOptions = ['All' => 'All', 'Nightmare' => 'Nightmare', 'Lucid' => 'Lucid', 'Liminal' => 'Liminal'];
+            ?>
             <div class="filter-row">
-                <span class="filter-pill active">All</span>
-                <span class="filter-pill">Nightmare</span>
-                <span class="filter-pill">Lucid</span>
-                <span class="filter-pill">Liminal</span>
+                <?php foreach ($filterOptions as $value => $label): ?>
+                    <a href="explore.php?type=<?php echo urlencode($value); ?><?php echo $searchTerm !== '' ? '&q=' . urlencode($searchTerm) : ''; ?>"
+                       class="filter-pill <?php echo $activeType === $value ? 'active' : ''; ?>"
+                       style="text-decoration:none;">
+                        <?php echo htmlspecialchars($label); ?>
+                    </a>
+                <?php endforeach; ?>
             </div>
 
             <div class="dream-grid">
                 <?php if (empty($dreams)): ?>
-                    <p class="card-timestamp">No dreams have been shared yet. Be the first to write one.</p>
+                    <p class="card-timestamp">
+                        <?php if ($activeType !== 'All' || $searchTerm !== ''): ?>
+                            No dreams match your filters. <a href="explore.php" style="color:#cbb8ff;">Clear filters</a>.
+                        <?php else: ?>
+                            No dreams have been shared yet. Be the first to write one.
+                        <?php endif; ?>
+                    </p>
                 <?php endif; ?>
 
                 <?php foreach ($dreams as $dream): ?>
@@ -73,7 +121,7 @@ function time_ago($datetime) {
             </div>
             <div class="text-end">
                 <div class="card-timestamp mb-1"><?php echo time_ago($dream['created_at']); ?></div>
-                <span class="resonate-btn"><i class="fa-regular fa-heart"></i> Resonate</span>
+                <span class="resonate-count"><i class="fa-regular fa-heart"></i> <?php echo (int) $dream['resonance_count']; ?></span>
             </div>
         </div>
         <p class="card-body-text"><?php echo htmlspecialchars($dream['content']); ?></p>
@@ -86,6 +134,5 @@ function time_ago($datetime) {
     </div>
 
 <script src="https://kit.fontawesome.com/b2e0418e70.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>

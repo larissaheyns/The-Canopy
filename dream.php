@@ -1,3 +1,4 @@
+<?php require_once 'config.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
@@ -8,30 +9,87 @@
 <body class="theme-dark">
     <?php
 
+    function time_ago($datetime) {
+        $diff = time() - strtotime($datetime);
+
+        if ($diff < 60) {
+            return 'just now';
+        } elseif ($diff < 3600) {
+            return floor($diff / 60) . 'm ago';
+        } elseif ($diff < 86400) {
+            return floor($diff / 3600) . 'h ago';
+        } else {
+            return floor($diff / 86400) . 'd ago';
+        }
+    }
+
+    $emanationsId = (int)($_GET['id'] ?? 0);
+    $actorMindId = $_SESSION['mind_id'] ?? $_SESSION['guest_mind_id'] ?? null;
+
+    $stmt = $conn->prepare(
+        "SELECT e.emanations_id, e.content, e.dream_type, e.created_at, m.alias
+         FROM emanations e
+         JOIN minds m ON e.mind_id = m.mind_id
+         WHERE e.emanations_id = ? AND e.is_visible = 1"
+    );
+    $stmt->bind_param('i', $emanationsId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$row) {
+        header('Location: explore.php');
+        exit;
+    }
+
+    $countStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM resonances WHERE emanations_id = ?");
+    $countStmt->bind_param('i', $emanationsId);
+    $countStmt->execute();
+    $resonanceCount = (int)($countStmt->get_result()->fetch_assoc()['cnt'] ?? 0);
+    $countStmt->close();
+
+    $hasResonated = false;
+    if ($actorMindId !== null) {
+        $hasStmt = $conn->prepare(
+            "SELECT resonances_id FROM resonances WHERE mind_id = ? AND emanations_id = ?"
+        );
+        $hasStmt->bind_param('ii', $actorMindId, $emanationsId);
+        $hasStmt->execute();
+        $hasResonated = (bool)$hasStmt->get_result()->fetch_assoc();
+        $hasStmt->close();
+    }
+
     $dream = [
-          'username'  => 'Drifter-493',
-          'avatar'    => 'img/avatar-drifter-493.jpg',
-          'timestamp' => '2h ago',
-          'body'      => "I was falling, endlessly. The wind screamed but I couldn't wake up.",
-          'tags'      => ['#Falling', '#Anxiety'],
-          'resonated' => false,
-          'resonance_count' => 12,
+          'username'  => $row['alias'] ?? 'Anonymous Drifter',
+          'avatar'    => 'img/avatar-default.jpg',
+          'timestamp' => time_ago($row['created_at']),
+          'body'      => $row['content'],
+          'tags'      => ['#' . $row['dream_type']],
+          'resonated' => $hasResonated,
+          'resonance_count' => $resonanceCount,
       ];
- 
-      $comments = [
-          [
-              'username'  => 'Drifter-21',
-              'avatar'    => 'img/avatar-drifter-21.jpg',
-              'timestamp' => '1h ago',
-              'body'      => "I've had this one too. It's always the falling that gets me.",
-          ],
-          [
-              'username'  => 'Somnambulist',
-              'avatar'    => 'img/avatar-somnambulist.jpg',
-              'timestamp' => '35m ago',
-              'body'      => 'The wind screaming detail is so vivid. Thank you for sharing this.',
-          ],
-      ];
+
+      $commentsStmt = $conn->prepare(
+          "SELECT i.interpretation, i.created_at, m.alias
+           FROM interpretations i
+           JOIN minds m ON i.mind_id = m.mind_id
+           WHERE i.emanations_id = ?
+           ORDER BY i.created_at ASC"
+      );
+      $commentsStmt->bind_param('i', $emanationsId);
+      $commentsStmt->execute();
+      $commentsResult = $commentsStmt->get_result();
+
+      $comments = [];
+      while ($commentRow = $commentsResult->fetch_assoc()) {
+          $comments[] = [
+              'username'  => $commentRow['alias'] ?? 'Anonymous Drifter',
+              'avatar'    => 'img/avatar-default.jpg',
+              'timestamp' => time_ago($commentRow['created_at']),
+              'body'      => $commentRow['interpretation'],
+          ];
+      }
+      $commentsStmt->close();
     ?>
  
     <?php include 'navbar.php'; ?>
@@ -65,10 +123,22 @@
                 </div>
  
                 <div class="d-flex align-items-center gap-3">
-                    <span class="resonate-btn <?php echo $dream['resonated'] ? 'active' : ''; ?>">
-                        <i class="fa-<?php echo $dream['resonated'] ? 'solid' : 'regular'; ?> fa-heart"></i>
-                        Resonate
-                    </span>
+                    <?php if ($actorMindId !== null): ?>
+                        <form method="post" action="resonate.php" style="margin:0;">
+                            <input type="hidden" name="emanations_id" value="<?php echo $emanationsId; ?>">
+                            <input type="hidden" name="redirect" value="dream.php?id=<?php echo $emanationsId; ?>">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                            <button type="submit" class="resonate-btn <?php echo $dream['resonated'] ? 'active' : ''; ?>">
+                                <i class="fa-<?php echo $dream['resonated'] ? 'solid' : 'regular'; ?> fa-heart"></i>
+                                Resonate
+                            </button>
+                        </form>
+                    <?php else: ?>
+                        <span class="resonate-btn">
+                            <i class="fa-regular fa-heart"></i>
+                            Resonate
+                        </span>
+                    <?php endif; ?>
                     <span class="card-timestamp"><?php echo (int) $dream['resonance_count']; ?> resonances</span>
                 </div>
             </div>
@@ -79,6 +149,9 @@
                 </div>
  
                 <div class="comments-list">
+                    <?php if (empty($comments)): ?>
+                        <p class="comment-text" style="color: #786a99;">No comments yet. Be the first to share your thoughts.</p>
+                    <?php endif; ?>
                     <?php foreach ($comments as $comment): ?>
                         <div class="comment-item">
                             <img class="avatar-orb avatar-orb-sm" src="<?php echo htmlspecialchars($comment['avatar']); ?>" alt="<?php echo htmlspecialchars($comment['username']); ?>">
@@ -93,20 +166,27 @@
                     <?php endforeach; ?>
                 </div>
  
-                <form style="margin-top: 1rem;">
+                <?php if ($actorMindId !== null): ?>
+                <form method="post" action="comment.php" style="margin-top: 1rem;">
+                    <input type="hidden" name="emanations_id" value="<?php echo $emanationsId; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                     <div class="field-group">
                         <label class="field-label">ADD A COMMENT</label>
-                        <textarea class="dream-textarea" name="comment_body" placeholder="Share your thoughts on this dream..." style="min-height: 90px;"></textarea>
+                        <textarea class="dream-textarea" name="comment_body" placeholder="Share your thoughts on this dream..." style="min-height: 90px;" required></textarea>
                     </div>
  
                     <button type="submit" class="btn-publish">Post Comment</button>
                 </form>
+                <?php else: ?>
+                <p class="comment-text" style="margin-top: 1rem;">
+                    <a href="index.php">Visit the home page</a> to receive your identity before commenting.
+                </p>
+                <?php endif; ?>
             </div>
  
         </div>
     </div>
  
 <script src="https://kit.fontawesome.com/b2e0418e70.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>

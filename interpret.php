@@ -3,12 +3,6 @@
 
     $isLoggedIn = isset($_SESSION['mind_id']);
 
-    $guestAliases = [
-    'Drifter-77', 'Wanderer-42', 'Dreamer-18', 'Voyager-63',
-    'Sleeper-09', 'Astral-31', 'Nebula-84', 'Eclipse-27',
-    'Orbit-56', 'Comet-13', 'Stardust-91', 'Moonwalker-38',
-    ];
- 
     $errors = [];
 
     $titleValue      = '';
@@ -40,20 +34,7 @@
     } elseif (isset($_SESSION['guest_mind_id'])) {
         $mindId = $_SESSION['guest_mind_id'];
     } else {
-        $randomAlias = $guestAliases[array_rand($guestAliases)];
-        $lookup = $conn->prepare("SELECT mind_id FROM minds WHERE alias = ?");
-        $lookup->bind_param('s', $randomAlias);
-        $lookup->execute();
-        $lookupResult = $lookup->get_result()->fetch_assoc();
-        $lookup->close();
- 
-        if ($lookupResult) {
-            $mindId = $lookupResult['mind_id'];
-            $_SESSION['guest_alias']   = $randomAlias;
-            $_SESSION['guest_mind_id'] = $mindId;
-        } else {
-            $errors[] = 'Guest posting isn\'t set up yet. Please run seed-guest-aliases.sql, or sign in.';
-        }
+        $errors[] = 'We could not identify you. Please refresh and try again.';
     }
 
     if (empty($errors)) {
@@ -174,6 +155,5 @@
     </div>
 
 <script src="https://kit.fontawesome.com/b2e0418e70.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>

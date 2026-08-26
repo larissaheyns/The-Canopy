@@ -1,3 +1,48 @@
+<?php
+require_once 'config.php';
+
+if (!isset($_SESSION['mind_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+$mindId = $_SESSION['mind_id'];
+
+$allowedFilters = ['all', 'core', 'hidden'];
+$activeFilter = $_GET['filter'] ?? 'all';
+if (!in_array($activeFilter, $allowedFilters, true)) {
+    $activeFilter = 'all';
+}
+
+$sql = "SELECT e.emanations_id, e.title, e.content, e.dream_type, e.is_core_memory, e.is_visible, e.created_at,
+               (SELECT COUNT(*) FROM resonances r WHERE r.emanations_id = e.emanations_id) AS resonance_count
+        FROM emanations e
+        WHERE e.mind_id = ?";
+
+if ($activeFilter === 'core') {
+    $sql .= " AND e.is_core_memory = 1";
+} elseif ($activeFilter === 'hidden') {
+    $sql .= " AND e.is_visible = 0";
+} else {
+    $sql .= " AND (e.is_visible = 0 OR e.is_core_memory = 1)";
+}
+
+$sql .= " ORDER BY e.created_at DESC";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('i', $mindId);
+$stmt->execute();
+$dreams = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+function time_ago($datetime) {
+    $diff = time() - strtotime($datetime);
+    if ($diff < 60) return 'just now';
+    if ($diff < 3600) return floor($diff / 60) . 'm ago';
+    if ($diff < 86400) return floor($diff / 3600) . 'h ago';
+    return floor($diff / 86400) . 'd ago';
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
@@ -23,41 +68,55 @@
             </div>
 
             <div class="filter-row">
-                <span class="filter-pill active">All</span>
-                <span class="filter-pill">Core Memories</span>
-                <span class="filter-pill">Hidden</span>
+                <?php
+                $filterLabels = ['all' => 'All', 'core' => 'Core Memories', 'hidden' => 'Hidden'];
+                foreach ($filterLabels as $value => $label):
+                ?>
+                    <a href="archive.php?filter=<?php echo urlencode($value); ?>"
+                       class="filter-pill <?php echo $activeFilter === $value ? 'active' : ''; ?>"
+                       style="text-decoration:none;">
+                        <?php echo htmlspecialchars($label); ?>
+                    </a>
+                <?php endforeach; ?>
             </div>
 
             <div class="dream-grid">
+                <?php if (empty($dreams)): ?>
+                    <p class="card-timestamp">Nothing here yet.</p>
+                <?php endif; ?>
 
-                <div class="dream-card-dark">
-                    <div class="d-flex align-items-start justify-content-between">
-                        <p class="card-title">The visitor</p>
-                        <span class="card-timestamp">2d ago</span>
+                <?php foreach ($dreams as $dream): ?>
+                    <div class="dream-card-dark">
+                        <div class="d-flex align-items-start justify-content-between">
+                            <p class="card-title"><?php echo htmlspecialchars($dream['title'] ?: 'Untitled Dream'); ?></p>
+                            <span class="card-timestamp"><?php echo time_ago($dream['created_at']); ?></span>
+                        </div>
+                        <p class="card-body-text"><?php echo htmlspecialchars($dream['content']); ?></p>
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <?php if (!$dream['is_visible']): ?>
+                                    <span class="status-badge status-hidden"><i class="fa-regular fa-eye-slash"></i> Hidden from public</span>
+                                <?php endif; ?>
+                                <?php if ($dream['is_core_memory']): ?>
+                                    <span class="status-badge status-core"><i class="fa-solid fa-star"></i> Core Memory</span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if (!$dream['is_visible']): ?>
+                                <form method="post" action="restore_dream.php" style="margin:0;">
+                                    <input type="hidden" name="emanations_id" value="<?php echo (int) $dream['emanations_id']; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                                    <button type="submit" class="archive-link" style="cursor:pointer; font-family:inherit;">
+                                        <i class="fa-solid fa-arrow-rotate-left"></i> Restore to Public
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                    <p class="card-body-text">An old friend visited me, but they had no face. I knew them, but not who they were.</p>
-                    <div>
-                        <span class="status-badge status-hidden"><i class="fa-regular fa-eye-slash"></i> Hidden from public</span>
-                        <span class="status-badge status-core"><i class="fa-solid fa-star"></i> Core Memory</span>
-                    </div>
-                </div>
-
-                <div class="dream-card-dark">
-                    <div class="d-flex align-items-start justify-content-between">
-                        <p class="card-title">The endless library</p>
-                        <span class="card-timestamp">5d ago</span>
-                    </div>
-                    <p class="card-body-text">A maze of books that changed every step. No two paths led to the same room twice.</p>
-                    <div>
-                        <span class="status-badge status-core"><i class="fa-solid fa-star"></i> Core Memory</span>
-                    </div>
-                </div>
-
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
 
-    <!-- Core Memory Rule modal -->
     <div class="modal fade" id="coreMemoryRuleModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content p-4" style="background: #1b1530; border: 1px solid rgba(167,139,250,0.2); border-radius: 22px; color: #e7e0ff;">
@@ -95,6 +154,5 @@
     </div>
 
 <script src="https://kit.fontawesome.com/b2e0418e70.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>

@@ -45,7 +45,7 @@ function time_ago($datetime) {
     <title>The Canopy</title>
     <link href="theme.css" rel="stylesheet">
 </head>
-<body class="theme-light">
+<body class="theme-light" style="background-image: url('<?php echo htmlspecialchars($bgImage); ?>');">
 
     <?php include 'navbar.php'; ?>
 

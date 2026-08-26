@@ -388,7 +388,14 @@ body.theme-nightmare .avatar-circle.dark {
 .card-row {
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
     gap: 1.5rem;
+}
+
+.card-row .dream-card-dark {
+    flex: 1 1 320px;
+    min-width: 280px;
 }
 
 .dream-card {
@@ -618,6 +625,28 @@ body.theme-dark .dream-tag {
     font-weight: 600;
     padding: 5px 14px;
     border-radius: 999px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.resonate-btn.active {
+    background: rgba(167, 139, 250, 0.32);
+    color: #f1ecff;
+}
+
+.form-error {
+    background: rgba(240, 90, 110, 0.12);
+    border: 1px solid rgba(240, 90, 110, 0.35);
+    border-radius: 14px;
+    padding: 10px 16px;
+    margin-bottom: 1.2rem;
+    text-align: left;
+}
+
+.form-error p {
+    color: #ffb3c0;
+    font-size: 0.88rem;
+    margin: 0.2rem 0;
 }
 
 /* Search bar (Explore) */
@@ -1051,8 +1080,6 @@ body.theme-dark .dream-tag {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    /* "screen" blend makes the photo's black background disappear into
-       the dark page, leaving only the glowing brain visible */
     mix-blend-mode: screen;
     filter: drop-shadow(0 0 14px rgba(139, 115, 255, 0.5));
 }

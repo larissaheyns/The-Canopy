@@ -21,6 +21,8 @@
     ];
     $__homeUrl = 'liminal.php';
 
+     $__isLoggedIn = isset($_SESSION['mind_id']);
+
      if (isset($conn)) {
         $__homeMindId = $_SESSION['mind_id'] ?? $_SESSION['guest_mind_id'] ?? null;
 
@@ -78,8 +80,20 @@
       <a href="interpret.php" class="nav-link link-dark <?php echo $__current === 'interpret.php' ? 'active' : ''; ?>"><i class="fa-regular fa-cloud"></i><h6 style="text-align: center;">Interpret</h6></a>
     </li>
     <li>
-      <a href="profile.php" class="nav-link link-dark <?php echo $__current === 'profile.php' ? 'active' : ''; ?>"><i class="fa-regular fa-user"></i><h6 style="text-align: center;">Profile</h6></a>
+      <?php $__profileTarget = $__isLoggedIn ? 'dashboard.php' : 'profile.php'; ?>
+      <a href="<?php echo $__profileTarget; ?>" class="nav-link link-dark <?php echo ($__current === 'profile.php' || $__current === 'dashboard.php') ? 'active' : ''; ?>"><i class="fa-regular fa-user"></i><h6 style="text-align: center;">Profile</h6></a>
     </li>
+  </ul>
+  <ul class="nav nav-pills flex-column">
+    <?php if ($__isLoggedIn): ?>
+    <li>
+      <a href="logout.php" class="nav-link link-dark"><i class="fa-regular fa-moon"></i><h6 style="text-align: center;">Sleep</h6></a>
+    </li>
+    <?php else: ?>
+    <li>
+      <a href="login.php" class="nav-link link-dark <?php echo $__current === 'login.php' ? 'active' : ''; ?>"><i class="fa-regular fa-moon"></i><h6 style="text-align: center;">Awaken</h6></a>
+    </li>
+    <?php endif; ?>
   </ul>
 </div>
  
