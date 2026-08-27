@@ -84,8 +84,10 @@ The-Canopy/
     ├── database.sql            # Schema (minds, emanations, resonances, interpretations)
     └── seed-guest-aliases.sql  # Seeds the 12 shared guest accounts
 ```
+## Documents
 
 
+![alt text](image.png)
 ---
 
 ## 🗺️ Roadmap / Known Gaps
