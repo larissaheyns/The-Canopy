@@ -393,9 +393,64 @@ body.theme-nightmare .avatar-circle.dark {
     gap: 1.5rem;
 }
 
-.card-row .dream-card-dark {
+/* All three landing pages share this grid: equal columns that wrap onto new rows. */
+.card-row .dream-card-dark,
+.card-row .dream-card {
     flex: 1 1 320px;
     min-width: 280px;
+}
+
+/* ---- Landing cards: "Show more" for long dreams ---- */
+.landing-card {
+    position: relative;               /* anchors the card-wide stretched link */
+}
+
+/* Only clamp when JS is running (landing.js adds .is-clamped) so no-JS shows the full dream. */
+.landing-card .dream-text.is-clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    overflow: hidden;
+}
+
+.landing-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+}
+
+.show-more-btn {
+    position: relative;
+    z-index: 2;                       /* sits above the stretched link so it can be clicked */
+    background: none;
+    border: none;
+    padding: 4px 0;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #6a49d1;
+}
+
+.show-more-btn:hover {
+    text-decoration: underline;
+}
+
+.show-more-btn[hidden] {
+    display: none;
+}
+
+body.theme-nightmare .show-more-btn {
+    color: #b9a3ff;
+}
+
+.landing-card .stretched-link:focus-visible::after {
+    outline: 2px solid #a78bfa;
+    outline-offset: -2px;
+    border-radius: 20px;
 }
 
 .dream-card {
@@ -860,6 +915,15 @@ body.theme-dark .dream-tag {
     font-size: 0.8rem;
 }
 
+/* You resonated with this dream: solid heart in the accent colour */
+.resonate-count.resonated {
+    color: #cbb8ff;
+}
+
+.resonate-count.resonated .fa-heart {
+    color: #b794ff;
+}
+
 .card-actions {
     display: flex;
     align-items: center;
@@ -1276,6 +1340,17 @@ body.theme-dark .dream-tag {
     resize: vertical;
     min-height: 130px;
     line-height: 1.6;
+}
+
+select.dream-input {
+    -webkit-appearance: none;
+    appearance: none;
+    padding-right: 48px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23cbb8ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 18px center;
+    background-size: 14px;
+    cursor: pointer;
 }
 
 .dream-input::placeholder,

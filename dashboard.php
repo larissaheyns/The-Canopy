@@ -72,7 +72,7 @@ function time_ago($datetime) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Canopy | Your Sanctuary</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link href="theme.css" rel="stylesheet">
+    <link href="theme.css?v=<?php echo filemtime(__DIR__ . '/theme.css'); ?>" rel="stylesheet">
 </head>
 <body class="theme-dark">
 
@@ -153,39 +153,45 @@ function time_ago($datetime) {
                         </div>
                     </div>
 
-                    <div class="modal fade" id="<?php echo $modalId; ?>" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content p-3">
-                                <div class="modal-body">
-                                    <?php if ($dream['is_core_memory']): ?>
-                                        <div class="modal-icon-warn"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                                        <p class="modal-title-warn mb-2">This is a Core Memory.<br>It cannot be un-dreamed.</p>
-                                        <p class="modal-body-text mb-4">You may hide it from the public, but it must remain a part of you.</p>
-                                    <?php else: ?>
-                                        <div class="modal-icon-warn" style="background: rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.4); color: #cbb8ff;">
-                                            <i class="fa-solid fa-box-archive"></i>
-                                        </div>
-                                        <p class="modal-title-warn mb-2" style="color: #cbb8ff;">Move this dream to your Archive?</p>
-                                        <p class="modal-body-text mb-4">It will be removed from the public feed and only visible to you.</p>
-                                    <?php endif; ?>
-                                    <form method="post" action="hide_dream.php">
-                                        <input type="hidden" name="emanations_id" value="<?php echo (int) $dream['emanations_id']; ?>">
-                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                                        <button type="submit" class="<?php echo $dream['is_core_memory'] ? 'btn-hide-public' : 'btn-archive-confirm'; ?> mb-2">
-                                            <?php echo $dream['is_core_memory'] ? 'Hide from Public' : 'Move to Archive'; ?>
-                                        </button>
-                                    </form>
-                                    <button type="button" class="btn-cancel-link" data-bs-dismiss="modal">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 <?php endforeach; ?>
             </div>
         </div>
     </div>
 
+    <?php
+    
+    foreach ($dreams as $dream):
+        $modalId = $dream['is_core_memory'] ? 'coreMemoryModal' . $dream['emanations_id'] : 'archiveConfirmModal' . $dream['emanations_id'];
+    ?>
+        <div class="modal fade" id="<?php echo $modalId; ?>" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content p-3">
+                    <div class="modal-body">
+                        <?php if ($dream['is_core_memory']): ?>
+                            <div class="modal-icon-warn"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <p class="modal-title-warn mb-2">This is a Core Memory.<br>It cannot be un-dreamed.</p>
+                            <p class="modal-body-text mb-4">You may hide it from the public, but it must remain a part of you.</p>
+                        <?php else: ?>
+                            <div class="modal-icon-warn" style="background: rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.4); color: #cbb8ff;">
+                                <i class="fa-solid fa-box-archive"></i>
+                            </div>
+                            <p class="modal-title-warn mb-2" style="color: #cbb8ff;">Move this dream to your Archive?</p>
+                            <p class="modal-body-text mb-4">It will be removed from the public feed and only visible to you.</p>
+                        <?php endif; ?>
+                        <form method="post" action="hide_dream.php">
+                            <input type="hidden" name="emanations_id" value="<?php echo (int) $dream['emanations_id']; ?>">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                            <button type="submit" class="<?php echo $dream['is_core_memory'] ? 'btn-hide-public' : 'btn-archive-confirm'; ?> mb-2">
+                                <?php echo $dream['is_core_memory'] ? 'Hide from Public' : 'Move to Archive'; ?>
+                            </button>
+                        </form>
+                        <button type="button" class="btn-cancel-link" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endforeach; ?>
+
     <script src="https://kit.fontawesome.com/b2e0418e70.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous"></script>
 </body>
 </html>

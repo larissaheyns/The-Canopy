@@ -1,5 +1,6 @@
 <?php
 include 'config.php';
+require_once 'landing_card.php';
  
 $isLoggedIn = isset($_SESSION['mind_id']);
  
@@ -43,7 +44,7 @@ function time_ago($datetime) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 <head>
     <title>The Canopy</title>
-    <link href="theme.css" rel="stylesheet">
+    <link href="theme.css?v=<?php echo filemtime(__DIR__ . '/theme.css'); ?>" rel="stylesheet">
 </head>
 <body class="theme-light" style="background-image: url('<?php echo htmlspecialchars($bgImage); ?>');">
 
@@ -77,23 +78,13 @@ function time_ago($datetime) {
             <?php endif; ?>
  
             <?php foreach ($dreams as $dream): ?>
-                <a href="dream.php?id=<?php echo (int) $dream['emanations_id']; ?>"
-                   class="dream-card" style="text-decoration:none; color:inherit; display:block;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <img class="avatar-circle small" src="img/avatar-default.jpg" alt="<?php echo htmlspecialchars($dream['alias']); ?>">
-                            <p class="card-username"><?php echo htmlspecialchars($dream['alias']); ?></p>
-                        </div>
-                        <span class="card-timestamp"><?php echo time_ago($dream['created_at']); ?></span>
-                    </div>
-                    <p class="card-body-text"><?php echo nl2br(htmlspecialchars($dream['content'])); ?></p>
-                    <span class="dream-tag">#Lucid</span>
-                </a>
+                <?php render_landing_card($dream, 'dream-card', 'Lucid'); ?>
             <?php endforeach; ?>
         </div>
     </div>
 
 <script src="https://kit.fontawesome.com/b2e0418e70.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="landing.js?v=<?php echo filemtime(__DIR__ . '/landing.js'); ?>" defer></script>
 </body>
 </html>

@@ -9,15 +9,18 @@ if (!in_array($activeType, $allowedTypes, true)) {
 
 $searchTerm = trim($_GET['q'] ?? '');
 
+$actorMindId = (int) ($_SESSION['mind_id'] ?? $_SESSION['guest_mind_id'] ?? 0);
+
 $sql = "SELECT e.emanations_id, e.title, e.content, e.dream_type, e.created_at,
                m.alias,
-               (SELECT COUNT(*) FROM resonances r WHERE r.emanations_id = e.emanations_id) AS resonance_count
+               (SELECT COUNT(*) FROM resonances r WHERE r.emanations_id = e.emanations_id) AS resonance_count,
+               (SELECT COUNT(*) FROM resonances r2 WHERE r2.emanations_id = e.emanations_id AND r2.mind_id = ?) AS has_resonated
         FROM emanations e
         JOIN minds m ON e.mind_id = m.mind_id
         WHERE e.is_visible = 1";
 
-$params = [];
-$types = '';
+$params = [$actorMindId];
+$types = 'i';
 
 if ($activeType !== 'All') {
     $sql .= " AND e.dream_type = ?";
@@ -65,7 +68,7 @@ function time_ago($datetime) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 <head>
     <title>The Canopy | Explore</title>
-    <link href="theme.css" rel="stylesheet">
+    <link href="theme.css?v=<?php echo filemtime(__DIR__ . '/theme.css'); ?>" rel="stylesheet">
 </head>
 <body class="theme-dark">
 
@@ -121,7 +124,8 @@ function time_ago($datetime) {
             </div>
             <div class="text-end">
                 <div class="card-timestamp mb-1"><?php echo time_ago($dream['created_at']); ?></div>
-                <span class="resonate-count"><i class="fa-regular fa-heart"></i> <?php echo (int) $dream['resonance_count']; ?></span>
+                <?php $iResonated = (int) $dream['has_resonated'] > 0; ?>
+                <span class="resonate-count<?php echo $iResonated ? ' resonated' : ''; ?>"<?php echo $iResonated ? ' title="You resonated with this dream"' : ''; ?>><i class="fa-<?php echo $iResonated ? 'solid' : 'regular'; ?> fa-heart"></i> <?php echo (int) $dream['resonance_count']; ?></span>
             </div>
         </div>
         <p class="card-body-text"><?php echo htmlspecialchars($dream['content']); ?></p>
